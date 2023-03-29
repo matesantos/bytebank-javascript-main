@@ -1,7 +1,6 @@
-import printCotacao from "./printCotacao.js";
+import selecionaCotacao from "./printCotacao.js";
 
 const graficoDolar = document.querySelector("#graficoDolar");
-
 const graficoParaDolar = new Chart(graficoDolar, {
   type: 'line',
   data: {
@@ -13,16 +12,6 @@ const graficoParaDolar = new Chart(graficoDolar, {
     }]
   },
 });
-
-setInterval(()=>conectaAPI(),5000);
-async function conectaAPI(){
-  const conecta = await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL");
-  const conectaTraduzido = await conecta.json();
-  const tempo = geraHorario();
-  const valor = conectaTraduzido.USDBRL.ask;
-  addDate(graficoParaDolar, tempo, valor);
-  printCotacao("dolar", valor);
-}
 
 function geraHorario() {
   const data = new Date();
@@ -38,4 +27,35 @@ function addDate(grafico, legenda, dados){
   grafico.update();
 }
 
+const workerDolar = new Worker('./script/workers/workerDolar.js');
+workerDolar.postMessage('usd');
 
+workerDolar.addEventListener('message', event => {
+  const tempo = geraHorario();
+  const valor = event.data.ask;
+  selecionaCotacao("dolar", valor);
+  addDate(graficoParaDolar, tempo, valor);
+})
+
+const graficoIene = document.getElementById('graficoIene');
+const graficoParaIene = new Chart(graficoIene, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Iene',
+            data: [],
+            borderWidth: 1
+        }]
+    }
+});
+
+const workerIene = new Worker('./script/workers/workerIene.js');
+workerIene.postMessage('jyp');
+
+workerIene.addEventListener('message', event => {
+  const tempo = geraHorario();
+  const valor = event.data.ask;
+  selecionaCotacao("iene", valor);
+  addDate(graficoParaIene, tempo, valor);
+})
